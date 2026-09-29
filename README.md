@@ -62,7 +62,7 @@ Your notes are committed into this same repository and pushed automatically, so 
 Then:
 
 ```bash
-git clone https://github.com/<owner>/NotesHub.git ~/notes
+git clone https://github.com/Suricatalu/NotesHub.git ~/notes
 cd ~/notes
 git remote set-url origin git@github.com:<your-account>/my-notes.git
 git push -u origin HEAD

@@ -62,7 +62,7 @@ flowchart LR
 然後：
 
 ```bash
-git clone https://github.com/<owner>/NotesHub.git ~/notes
+git clone https://github.com/Suricatalu/NotesHub.git ~/notes
 cd ~/notes
 git remote set-url origin git@github.com:<你的帳號>/my-notes.git
 git push -u origin HEAD
