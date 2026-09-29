@@ -1,0 +1,30 @@
+# Log files
+src/sync-notes.log
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Backup config
+src/sources.conf.bak
+
+# Local profile (per-machine, not version-controlled)
+src/.sync-profile
+
+# vscode
+.vscode/
+
+# Claude Code (only skills/ is version-controlled; other local settings are not)
+.claude/*
+!.claude/skills/
+
+# Python cache (would make skill_sha change spuriously; see docs/www-plan.md)
+__pycache__/
+*.py[cod]
+
+# Env
+.env

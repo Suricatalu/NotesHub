@@ -1,0 +1,27 @@
+{
+  "_comment": "Shared glossary master file. Pages are self-contained single files, so copy the entries you need into that page's <script id=\"glossary-data\">, but definitions are maintained only here — the same term must not be defined again inside a page. Each entry needs term / def / why / source; 'source' is required and should point either to a note path inside this repo or to the spec, manual or paper the definition came from, so readers can trace it back. This file starts with three entries purely to demonstrate the format — replace them with your own domain's terms. See glossary.example.json for a longer worked sample.",
+  "idempotency": {
+    "term": "idempotency",
+    "full": "idempotent operation",
+    "def": "An operation that produces the same result whether it is applied once or many times. Retrying it is therefore safe: the second and later attempts change nothing beyond what the first one did.",
+    "why": "It is a property of the operation's *effect*, not of the response you get back — an idempotent call may legitimately return a different status the second time. Designs go wrong when a retry path assumes \"same request, same response\" rather than \"same request, same end state\".",
+    "source": "RFC 9110 §9.2.2 (Idempotent Methods)",
+    "url": "https://datatracker.ietf.org/doc/html/rfc9110#section-9.2.2"
+  },
+  "backpressure": {
+    "term": "backpressure",
+    "full": "demand-driven flow control",
+    "def": "A mechanism by which a slow consumer tells a fast producer to slow down, rather than silently accumulating unprocessed work in a buffer between them.",
+    "why": "Without it a queue is not a safety margin, it is a delayed failure — the system looks healthy right up until memory runs out or latency passes the point where the results still matter. \"Just make the buffer bigger\" moves the failure later, never away.",
+    "source": "Reactive Streams Specification, Section 1 (Publisher/Subscriber protocol)",
+    "url": "https://github.com/reactive-streams/reactive-streams-jvm/blob/master/README.md"
+  },
+  "eventual-consistency": {
+    "term": "eventual consistency",
+    "full": "eventual consistency model",
+    "def": "A guarantee that if no new updates are made, all replicas will converge on the same value — with no promise about how long that takes, or what a reader sees in the meantime.",
+    "why": "The guarantee is about the *end* state, so any code that reads immediately after writing is outside what the model promises. Bugs from this look like race conditions and are usually blamed on the network, when the storage layer was behaving exactly as documented.",
+    "source": "Vogels, \"Eventually Consistent\", Communications of the ACM 52(1)",
+    "url": "https://dl.acm.org/doi/10.1145/1435417.1435432"
+  }
+}

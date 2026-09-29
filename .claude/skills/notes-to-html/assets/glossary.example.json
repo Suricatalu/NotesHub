@@ -1,0 +1,131 @@
+{
+  "_comment": "A WORKED SAMPLE, not used by anything. It shows what a good entry looks like, especially the 'why' field, which is the hard one: it should say what goes wrong if you get the concept subtly wrong, not restate the definition. These entries come from general backend, distributed systems and web topics. Your own glossary.json should hold your domain's terms instead. Delete this file if you don't want it.",
+  "write-ahead-log": {
+    "term": "write-ahead log",
+    "full": "WAL",
+    "def": "A durability technique where every change is first appended to a sequential log and flushed to stable storage before the data pages themselves are modified. After a crash, the database replays the log to restore every committed change.",
+    "why": "A commit is durable at the moment its log record reaches disk, not when the table file is updated. So the fsync behaviour of the log device decides whether \"committed\" really means committed. A disk or virtual machine that acknowledges writes it has only cached can lose transactions the application was told had succeeded.",
+    "source": "PostgreSQL Documentation, Write-Ahead Logging (WAL)",
+    "url": "https://www.postgresql.org/docs/current/wal-intro.html"
+  },
+  "mvcc": {
+    "term": "MVCC",
+    "full": "multiversion concurrency control",
+    "def": "A concurrency scheme where writers create new versions of a row instead of overwriting it in place. Each transaction reads the version that was current as of its snapshot, so readers never block writers and writers never block readers.",
+    "why": "Old versions don't disappear on their own. Something has to clean them up (VACUUM in PostgreSQL, purge in InnoDB), and one long-running transaction pins every version newer than its snapshot. A forgotten open transaction can quietly bloat tables until performance falls off a cliff.",
+    "source": "PostgreSQL Documentation, Concurrency Control: Introduction",
+    "url": "https://www.postgresql.org/docs/current/mvcc-intro.html"
+  },
+  "snapshot-isolation": {
+    "term": "snapshot isolation",
+    "full": "snapshot isolation (SI)",
+    "def": "An isolation level where each transaction sees a consistent snapshot of the database taken at its start. A commit fails only if another concurrent transaction already committed a write to the same rows.",
+    "why": "It prevents dirty reads, non-repeatable reads and lost updates, so it feels serializable, but it is not. Two transactions that each read overlapping data and then write *different* rows can both commit and together break an invariant (write skew). Checks like \"at least one doctor must stay on call\" fail this way.",
+    "source": "Berenson et al., \"A Critique of ANSI SQL Isolation Levels\", SIGMOD 1995",
+    "url": "https://arxiv.org/abs/cs/0701157"
+  },
+  "linearizability": {
+    "term": "linearizability",
+    "full": "atomic consistency",
+    "def": "A consistency guarantee where every operation appears to take effect instantaneously at some point between its invocation and its response. So once a write completes, every later read, from any client, sees it or something newer.",
+    "why": "It is a guarantee about *real time*, which is exactly what replicated systems find expensive. Reading from a follower replica, or from a cache in front of the leader, silently gives it up. A service that is \"linearizable\" only for requests hitting the leader isn't linearizable at all.",
+    "source": "Herlihy & Wing, \"Linearizability: A Correctness Condition for Concurrent Objects\", ACM TOPLAS 12(3), 1990",
+    "url": "https://dl.acm.org/doi/10.1145/78969.78972"
+  },
+  "quorum": {
+    "term": "quorum",
+    "full": "majority quorum",
+    "def": "The minimum number of nodes that must agree before an operation counts as successful. In a cluster of N nodes it is usually a majority, floor(N/2) + 1, so any two quorums always share at least one node.",
+    "why": "The overlap is the whole point: it guarantees that a new leader or a later read meets at least one node that saw the last committed write. That is also why a 4-node cluster tolerates no more failures than a 3-node one (both survive one), and why splitting a cluster evenly across two sites leaves neither side able to make progress.",
+    "source": "Ongaro & Ousterhout, \"In Search of an Understandable Consensus Algorithm (Raft)\", USENIX ATC 2014",
+    "url": "https://raft.github.io/raft.pdf"
+  },
+  "at-least-once": {
+    "term": "at-least-once delivery",
+    "full": "at-least-once message delivery semantics",
+    "def": "A delivery guarantee where a message is retried until the consumer acknowledges it, so it is never lost but may be delivered more than once. This happens, for example, when the consumer processes a message and crashes before its acknowledgement is recorded.",
+    "why": "Duplicates are part of the contract, not a rare failure. Consumers must be idempotent or deduplicate by message ID. \"Exactly-once\" offerings usually mean exactly-once *within* the broker's own transaction boundary, and the side effects your consumer has on other systems are outside it.",
+    "source": "Apache Kafka Documentation, Message Delivery Semantics",
+    "url": "https://kafka.apache.org/documentation/#semantics"
+  },
+  "backoff-jitter": {
+    "term": "exponential backoff with jitter",
+    "full": "randomized exponential backoff",
+    "def": "A retry strategy where the wait between attempts grows exponentially (for example 100 ms, 200 ms, 400 ms…) up to a cap, and each wait is randomized rather than used exactly.",
+    "why": "Without jitter, every client that failed at the same moment retries at the same moment. The retries arrive as synchronized waves that knock the recovering service over again. The randomness is what spreads the load. Exponential growth alone only makes the waves farther apart.",
+    "source": "AWS Architecture Blog, \"Exponential Backoff And Jitter\"",
+    "url": "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/"
+  },
+  "circuit-breaker": {
+    "term": "circuit breaker",
+    "full": "circuit breaker pattern",
+    "def": "A wrapper around calls to a remote dependency. After a threshold of failures it \"opens\" and fails calls immediately without contacting the dependency. After a timeout it lets a trial request through to check whether the dependency has recovered.",
+    "why": "Its job is to protect the *caller*: to stop threads and connections from piling up behind a dependency that will time out anyway. If the fast-fail path has no sensible fallback, an open breaker just turns a slow outage into a fast one, so the fallback behaviour matters as much as the thresholds.",
+    "source": "Martin Fowler, \"CircuitBreaker\" (bliki)",
+    "url": "https://martinfowler.com/bliki/CircuitBreaker.html"
+  },
+  "cache-stampede": {
+    "term": "cache stampede",
+    "full": "thundering herd on cache miss",
+    "def": "A load spike that happens when a popular cache entry expires and many concurrent requests all miss at once. Every one of them then recomputes the same value against the backing store at the same time.",
+    "why": "The cache hides how expensive the query really is, until the moment it doesn't. The backing store then sees traffic sized for the cache, not for itself. Longer TTLs only postpone it. The fixes change *who* recomputes: a lock or single-flight so one request refreshes the value, or probabilistic early expiration.",
+    "source": "Vattani, Chierichetti & Lowenstein, \"Optimal Probabilistic Cache Stampede Prevention\", PVLDB 8(8), 2015",
+    "url": "https://www.vldb.org/pvldb/vol8/p886-vattani.pdf"
+  },
+  "tail-latency": {
+    "term": "tail latency",
+    "full": "high-percentile latency (p99, p99.9)",
+    "def": "The response time of the slowest fraction of requests, for example the 99th percentile: 1% of requests take longer than this value.",
+    "why": "Averages hide it, and fan-out amplifies it. A page that waits on 100 backend calls, each with a 1% chance of being slow, is slow about 63% of the time. So a backend whose p99 \"only affects 1% of calls\" can dominate what nearly every user experiences.",
+    "source": "Dean & Barroso, \"The Tail at Scale\", Communications of the ACM 56(2), 2013",
+    "url": "https://dl.acm.org/doi/10.1145/2408776.2408794"
+  },
+  "etag": {
+    "term": "ETag / conditional request",
+    "full": "entity tag with If-Match / If-None-Match",
+    "def": "An opaque version identifier that the server returns with a resource. A client sends it back in If-None-Match to revalidate a cached copy (a 304 means it hasn't changed), or in If-Match to update the resource only if it is still the version the client last saw (a 412 means someone else changed it).",
+    "why": "The same header serves two very different purposes. Most people only know the caching use and skip If-Match. Without it, two clients that both read, edit and PUT the same resource silently overwrite each other (a lost update), and nothing in the protocol reports it.",
+    "source": "RFC 9110 §13.1 (Preconditions)",
+    "url": "https://datatracker.ietf.org/doc/html/rfc9110#section-13.1"
+  },
+  "cors": {
+    "term": "CORS",
+    "full": "Cross-Origin Resource Sharing",
+    "def": "A browser mechanism that lets a server declare, through response headers such as Access-Control-Allow-Origin, which other origins may read its responses from scripts. For non-simple requests the browser first sends a preflight OPTIONS request to ask permission.",
+    "why": "It relaxes the browser's same-origin policy. It is not a security layer that protects the server. Requests from curl, backend services or attackers' own scripts ignore it entirely, and a blocked \"simple\" request may still have reached and changed the server. Only the *response* is withheld from the page.",
+    "source": "WHATWG Fetch Standard, CORS protocol",
+    "url": "https://fetch.spec.whatwg.org/#http-cors-protocol"
+  },
+  "csrf": {
+    "term": "CSRF",
+    "full": "Cross-Site Request Forgery",
+    "def": "An attack where a malicious site causes the victim's browser to send a state-changing request to another site where the victim is logged in. The browser attaches that site's cookies automatically, so the request arrives looking authenticated.",
+    "why": "The server can't tell a forged request from a real one by the session cookie, because the cookie is exactly what the attack borrows. The defences prove the request came from your own page: anti-CSRF tokens, SameSite cookies, checking Origin. Moving to a JSON API or POST-only endpoints is not a defence.",
+    "source": "OWASP Cheat Sheet Series, Cross-Site Request Forgery Prevention",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html"
+  },
+  "jwt": {
+    "term": "JWT",
+    "full": "JSON Web Token",
+    "def": "A compact, URL-safe token carrying a set of JSON claims (subject, expiry, scopes…), usually signed so the recipient can verify who issued it and that it wasn't modified.",
+    "why": "Signed is not encrypted: anyone holding the token can base64-decode and read every claim. And because it is verified without a server-side lookup, a JWT can't be revoked before it expires unless you add the very lookup it was meant to avoid. Short expiry times are the real control.",
+    "source": "RFC 7519 (JSON Web Token)",
+    "url": "https://datatracker.ietf.org/doc/html/rfc7519"
+  },
+  "monotonic-clock": {
+    "term": "monotonic clock",
+    "full": "CLOCK_MONOTONIC",
+    "def": "A clock that only moves forward at a steady rate from an arbitrary starting point, unaffected by the system time being changed. It is for measuring intervals, not for telling the time of day.",
+    "why": "Wall-clock time can jump backwards or forwards whenever NTP corrects it or an admin changes it. Timeouts, rate limiters and durations computed from wall-clock time then go negative or fire at the wrong moment. The bug only appears on the rare day the clock is adjusted.",
+    "source": "Linux man-pages, clock_gettime(2)",
+    "url": "https://man7.org/linux/man-pages/man2/clock_gettime.2.html"
+  },
+  "grapheme-cluster": {
+    "term": "grapheme cluster",
+    "full": "extended grapheme cluster",
+    "def": "What a user perceives as a single character. It can consist of several Unicode code points: a base letter plus combining accents, a flag made of two regional indicators, or an emoji joined with zero-width joiners.",
+    "why": "String length, truncation and cursor movement are usually implemented on bytes or code points, not on grapheme clusters. So \"cut to 20 characters\" can split an emoji or strip an accent, and length limits disagree between the frontend and the database.",
+    "source": "Unicode Standard Annex #29, Unicode Text Segmentation",
+    "url": "https://www.unicode.org/reports/tr29/"
+  }
+}

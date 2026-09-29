@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<!--
+  notes-to-html page skeleton
+  =====================================================================
+  Copy this file and replace the parts marked with <<< >>>. Do not change
+  the CSS or JS — they are the single source of site-wide consistency;
+  if you need a new style, add it to this skeleton first, then sync it
+  to existing pages.
+
+  Hard contract (checked item by item by scripts/validate_page.py):
+    1. Single-file self-contained: must not reference any external CSS / JS / fonts / images
+    2. Must have a "Sources for this page" section whose relative paths resolve
+       on the filesystem, with the main source marked as <li data-role="main">,
+       exactly one per page
+       (output goes to www/pages/<section>/<filename>.html, so the path back
+       to the repo root is ../../../)
+    3. Every <svg> must carry its own style="--fig-vb:<viewBox width>px"
+    4. Must not write to or reference www/manifest.json
+    5. Must work correctly both embedded in an iframe and opened standalone
+  =====================================================================
+-->
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><<<Page title, matching the title in www.conf>>></title>
+<style>
+/* =====================================================================
+   1. TOKENS — the single source of site-wide colors/font sizes; do not
+   hardcode any color codes within a page
+   ===================================================================== */
+:root {
+  --measure: 68ch;
+  --toc-w: 200px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+
+  --fs-xs:   clamp(11.5px, .72rem + .1vw, 13px);
+  --fs-sm:   clamp(13px,   .8rem  + .15vw, 14.5px);
+  --fs-base: clamp(15.5px, .95rem + .2vw, 17.5px);
+  --fs-h3:   clamp(18px,   1.05rem + .5vw, 22px);
+  --fs-h2:   clamp(22px,   1.2rem + 1.1vw, 30px);
+  --fs-h1:   clamp(26px,   1.4rem + 1.8vw, 40px);
+  --lh-body: 1.78;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC",
+               "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", "DejaVu Sans Mono", Consolas, monospace;
+
+  /* Minimum diagram legibility threshold, see references/rwd.md */
+  --diagram-min-effective-px: 9.5;
+}
+
+:root, [data-theme="dark"] {
+  --bg: #0d1117; --bg-raised: #151b23; --bg-sunken: #090c10;
+  --border: #262d36; --border-strong: #3a434f;
+  --text: #e4e8ee; --text-muted: #9aa5b4; --text-faint: #838e9c;
+  --accent: #58a6ff; --accent-soft: #1c3050;
+  --shadow: 0 12px 32px rgba(0,0,0,.55);
+  --dg-hw: #c084fc;       --dg-hw-bg: #2a1d3d;
+  --dg-verified: #4ade80; --dg-verified-bg: #12301f;
+  --dg-key: #fbbf24;      --dg-key-bg: #33270a;
+  --dg-fail: #f87171;     --dg-fail-bg: #3a1717;
+  --dg-data: #38bdf8;     --dg-data-bg: #0c2b3d;
+  --dg-neutral: #8b98a8;  --dg-neutral-bg: #1b222b;
+  --dg-surface: #0f151c;
+}
+[data-theme="light"] {
+  --bg: #ffffff; --bg-raised: #f6f8fa; --bg-sunken: #eef1f5;
+  --border: #d5dae1; --border-strong: #aeb7c2;
+  --text: #1c2128; --text-muted: #56606d; --text-faint: #616a77;
+  --accent: #0550ae; --accent-soft: #dbeafe;
+  --shadow: 0 12px 32px rgba(20,30,50,.16);
+  --dg-hw: #7c3aed;       --dg-hw-bg: #f3ecff;
+  --dg-verified: #15803d; --dg-verified-bg: #e8f7ed;
+  --dg-key: #a16207;      --dg-key-bg: #fdf5e0;
+  --dg-fail: #b91c1c;     --dg-fail-bg: #fdecec;
+  --dg-data: #0369a1;     --dg-data-bg: #e4f3fc;
+  --dg-neutral: #5c6774;  --dg-neutral-bg: #f0f2f5;
+  --dg-surface: #fcfdfe;
+}
+/* Follow the system theme when opened standalone and the user's system is in light mode */
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) { color-scheme: light; }
+  html:not([data-theme]) body { --bg: #ffffff; --bg-raised: #f6f8fa; --bg-sunken: #eef1f5;
+    --border: #d5dae1; --border-strong: #aeb7c2;
+    --text: #1c2128; --text-muted: #56606d; --text-faint: #616a77;
+    --accent: #0550ae; --accent-soft: #dbeafe;
+    --dg-hw: #7c3aed; --dg-hw-bg: #f3ecff; --dg-verified: #15803d;
+    --dg-verified-bg: #e8f7ed; --dg-key: #a16207; --dg-key-bg: #fdf5e0;
+    --dg-fail: #b91c1c; --dg-fail-bg: #fdecec; --dg-data: #0369a1;
+    --dg-data-bg: #e4f3fc; --dg-neutral: #5c6774; --dg-neutral-bg: #f0f2f5;
+    --dg-surface: #fcfdfe; }
+}
+
+/* =====================================================================
+   2. BASE
+   ===================================================================== */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text);
+       font-family: var(--font-sans); font-size: var(--fs-base);
+       line-height: var(--lh-body); -webkit-font-smoothing: antialiased; }
+h1 { font-size: var(--fs-h1); line-height: 1.14; letter-spacing: -.02em;
+     margin: 0 0 14px; max-width: 22ch; }
+h2 { font-size: var(--fs-h2); line-height: 1.28; letter-spacing: -.015em;
+     margin: 62px 0 16px; padding-top: 22px; border-top: 1px solid var(--border); }
+h3 { font-size: var(--fs-h3); line-height: 1.35; margin: 36px 0 10px; }
+p, li { max-width: var(--measure); }
+p { margin: 0 0 18px; }
+ul, ol { padding-left: 1.35em; margin: 0 0 18px; }
+li { margin-bottom: 8px; }
+a { color: var(--accent); text-underline-offset: 3px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--bg-sunken);
+       border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px;
+       word-break: break-word; }
+strong { color: var(--text); font-weight: 650; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: var(--fs-xs);
+        color: var(--text-faint); margin-bottom: 26px; }
+.lede { font-size: calc(var(--fs-base) * 1.08); color: var(--text-muted);
+        max-width: var(--measure); margin-bottom: 28px; }
+
+/* =====================================================================
+   3. LAYOUT
+   Breakpoints are derived from diagram legibility, not chosen by feel
+   (see the derivation in references/rwd.md):
+     iframe >= 1100px -> show the in-page TOC, content column still has
+                          744px, enough for a 740px wide-format diagram
+     iframe <  1100px -> collapse the TOC, content column takes the full width
+   ===================================================================== */
+.topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center;
+          gap: 14px; padding: 9px var(--gutter);
+          background: color-mix(in srgb, var(--bg) 88%, transparent);
+          backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.crumb { font-size: var(--fs-xs); color: var(--text-faint); }
+.topbar .spacer { flex: 1; }
+.theme-btn { font: inherit; font-size: var(--fs-xs); background: var(--bg-raised);
+             color: var(--text-muted); border: 1px solid var(--border);
+             border-radius: 999px; padding: 5px 13px; cursor: pointer; }
+.theme-btn:hover { color: var(--text); border-color: var(--border-strong); }
+/* Inside an iframe, the theme is controlled centrally by the shell; the page's own toggle button must be hidden */
+body[data-embedded="1"] .theme-btn { display: none; }
+
+.shell { display: grid; grid-template-columns: minmax(0,1fr); gap: 0 40px;
+         max-width: 1180px; margin: 0 auto; padding: 0 var(--gutter) 90px; }
+main { min-width: 0; padding-top: 34px; }
+.toc { display: none; }
+@media (min-width: 1100px) {
+  .shell { grid-template-columns: minmax(0,1fr) var(--toc-w); }
+  .toc { display: block; position: sticky; top: 68px; align-self: start;
+         padding-top: 42px; max-height: calc(100vh - 90px); overflow-y: auto;
+         font-size: var(--fs-xs); }
+  .toc h4 { margin: 0 0 10px; font-size: var(--fs-xs); letter-spacing: .1em;
+            text-transform: uppercase; color: var(--text-faint); }
+  .toc a { display: block; padding: 5px 0 5px 12px; color: var(--text-muted);
+           text-decoration: none; border-left: 2px solid var(--border); line-height: 1.45; }
+  .toc a:hover, .toc a[aria-current="true"] { color: var(--accent);
+                                              border-left-color: var(--accent); }
+}
+
+/* =====================================================================
+   4. CALLOUT
+   ===================================================================== */
+.callout { border: 1px solid var(--border); border-left: 3px solid var(--accent);
+           background: var(--bg-raised); border-radius: var(--radius-md);
+           padding: 17px 19px; margin: 24px 0; max-width: var(--measure); }
+.callout > :last-child { margin-bottom: 0; }
+.callout .title { font-size: var(--fs-sm); font-weight: 700; letter-spacing: .04em;
+                  color: var(--accent); margin-bottom: 9px; }
+.callout.scope { border-left-color: var(--dg-data); }
+.callout.scope .title { color: var(--dg-data); }
+.callout.warn { border-left-color: var(--dg-key); }
+.callout.warn .title { color: var(--dg-key); }
+.scope-grid { display: grid; gap: 14px 24px; }
+@media (min-width: 620px) { .scope-grid { grid-template-columns: 1fr 1fr; } }
+.scope-grid h5 { margin: 0 0 6px; font-size: var(--fs-xs); color: var(--text-faint);
+                 letter-spacing: .06em; }
+.scope-grid ul { margin: 0; font-size: var(--fs-sm); }
+
+/* =====================================================================
+   5. FIGURE — the iron rule of diagram sizing
+   Every <svg> carries its own style="--fig-vb:<viewBox width>px", so that:
+     max-width: var(--fig-vb)   never scales up (going past 1:1 would blow
+                                 up the SVG's internal font sizes proportionally)
+     min-width: var(--fig-vb)   scrollable variants never scale down (keeps
+                                 an exact 1:1)
+   ===================================================================== */
+figure { margin: 38px 0; }
+.fig-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 11px; }
+.fig-num { flex: none; font-family: var(--font-mono); font-size: var(--fs-xs);
+           color: var(--bg); background: var(--accent); padding: 2px 8px;
+           border-radius: 999px; font-weight: 700; }
+.fig-title { font-size: var(--fs-sm); font-weight: 650; }
+.fig-frame { background: var(--dg-surface); border: 1px solid var(--border);
+             border-radius: var(--radius-lg); padding: 18px 16px; }
+@media (max-width: 480px) { .fig-frame { padding: 12px 10px; } }
+.fig-frame svg { display: block; width: 100%; height: auto;
+                 margin-inline: auto; max-width: var(--fig-vb); }
+.fig-scroll { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin;
+              -webkit-overflow-scrolling: touch; }
+.fig-scroll > svg { min-width: var(--fig-vb); }
+
+/* Switching between the two variants. This must be written as
+   `.fig-frame svg.only-*` (specificity 0,2,1) to override the
+   `.fig-frame svg` rule above (0,1,1). Writing just `.only-wide` (0,1,0)
+   gets overridden — both variants render at once and the narrow one
+   gets stretched to full width, with no error message at all. */
+.fig-frame svg.only-narrow { display: block; }
+.fig-frame svg.only-wide   { display: none; }
+@media (min-width: 880px) {
+  .fig-frame svg.only-narrow { display: none; }
+  .fig-frame svg.only-wide   { display: block; }
+}
+.scroll-hint { display: none; font-size: var(--fs-xs); color: var(--text-faint);
+               margin-top: 9px; text-align: center; }
+@media (max-width: 900px) { .scroll-hint { display: block; } }
+@media (min-width: 501px) { .scroll-hint.sm { display: none; } }
+@media (max-width: 500px) { .scroll-hint.sm { display: block; } }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 15px;
+          padding-top: 13px; border-top: 1px dashed var(--border);
+          font-size: var(--fs-xs); color: var(--text-muted); }
+.legend i { display: inline-flex; align-items: center; gap: 7px; font-style: normal; }
+.legend .sw { width: 15px; height: 11px; border-radius: 3px;
+              border: 1.5px solid currentColor; flex: none; }
+.legend .ln { width: 22px; height: 0; border-top: 2px solid currentColor; flex: none; }
+.legend .ln.dash { border-top-style: dashed; }
+figcaption { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 13px; }
+figcaption details { margin-top: 9px; }
+figcaption summary { cursor: pointer; color: var(--accent); font-size: var(--fs-xs); }
+.chart-method { font-size: var(--fs-xs); color: var(--text-faint);
+                border-left: 2px solid var(--border-strong); padding-left: 10px; margin: 9px 0; }
+
+/* Font sizes inside SVG are always controlled by CSS; SVG tags must not carry their own font-family */
+svg text { font-family: var(--font-sans); fill: var(--text); }
+svg .t-title { font-size: 14px; font-weight: 650; }
+svg .t-role  { font-size: 11px; fill: var(--text-muted); }
+svg .t-mono  { font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-faint); }
+svg .t-chip  { font-size: 10.5px; }
+svg .t-chip-v{ font-family: var(--font-mono); font-size: 10px; fill: var(--text-muted); }
+svg .t-fail  { font-size: 12px; font-weight: 600; fill: var(--dg-fail); }
+svg .t-tag   { font-size: 10px; fill: var(--text-faint); }
+/* Narrow-variant only: the mobile container is only 268px, so the nominal font size must be enlarged to survive scaling */
+svg .n-title { font-size: 18px; font-weight: 650; }
+svg .n-role  { font-size: 14px; fill: var(--text-muted); }
+svg .n-mono  { font-family: var(--font-mono); font-size: 13px; fill: var(--text-faint); }
+svg .n-key   { font-size: 13px; }
+svg .n-fail  { font-size: 15px; font-weight: 650; fill: var(--dg-fail); }
+
+/* =====================================================================
+   6. TERM CARD
+   ===================================================================== */
+.term { font: inherit; color: inherit; background: none; border: 0; padding: 0;
+        cursor: help; border-bottom: 1px dotted var(--accent); line-height: inherit; }
+.term:hover, .term[aria-expanded="true"] { color: var(--accent); }
+.term:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.term .q { display: inline-flex; align-items: center; justify-content: center;
+           width: 1.05em; height: 1.05em; margin-left: .25em; font-size: .72em;
+           font-weight: 700; line-height: 1; border: 1px solid currentColor;
+           border-radius: 50%; color: var(--accent); vertical-align: .18em; }
+.tipcard { position: fixed; z-index: 200; width: min(360px, calc(100vw - 24px));
+           background: var(--bg-raised); border: 1px solid var(--border-strong);
+           border-radius: var(--radius-md); box-shadow: var(--shadow);
+           padding: 15px 17px; font-size: var(--fs-sm); line-height: 1.6;
+           opacity: 0; transform: translateY(4px); pointer-events: none;
+           transition: opacity .12s ease, transform .12s ease; }
+.tipcard[data-open="true"] { opacity: 1; transform: none; pointer-events: auto; }
+.tipcard h6 { margin: 0 0 2px; font-size: var(--fs-sm); font-weight: 700; }
+.tipcard .full { margin: 0 0 9px; font-size: var(--fs-xs); color: var(--text-faint);
+                 font-family: var(--font-mono); }
+.tipcard p { margin: 0 0 9px; max-width: none; }
+.tipcard .why { color: var(--text-muted); font-size: var(--fs-xs);
+                border-left: 2px solid var(--dg-key); padding-left: 10px; margin: 0 0 9px; }
+.tipcard .src { margin: 0; font-size: var(--fs-xs); color: var(--text-faint); }
+.tipcard .close { display: none; }
+@media (max-width: 560px) {
+  .tipcard { left: 8px !important; right: 8px; top: auto !important; bottom: 8px;
+             width: auto; transform: translateY(12px); }
+  .tipcard[data-open="true"] { transform: none; }
+  .tipcard .close { display: block; position: absolute; top: 6px; right: 10px;
+                    background: none; border: 0; color: var(--text-faint);
+                    font-size: 20px; line-height: 1; cursor: pointer; }
+}
+
+/* =====================================================================
+   7. MATH (MathML, no external dependency)
+   ===================================================================== */
+.math-block { display: grid; grid-template-columns: 1fr auto; align-items: center;
+              gap: 12px; margin: 22px 0; }
+.math-scroll { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin;
+               padding: 13px 12px; background: var(--bg-sunken);
+               border: 1px solid var(--border); border-radius: var(--radius-md); }
+.math-block .eqno { font-family: var(--font-mono); font-size: var(--fs-sm);
+                    color: var(--text-faint); white-space: nowrap; }
+math { font-size: 1.12em; }
+.math-inline math { font-size: 1.02em; }
+.symtab { margin: 0 0 20px; }
+.symtab table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.symtab th, .symtab td { text-align: left; padding: 9px 12px;
+                         border-bottom: 1px solid var(--border); vertical-align: top; }
+.symtab th { font-size: var(--fs-xs); color: var(--text-faint); font-weight: 650;
+             background: var(--bg-raised); }
+.symtab td:first-child { font-family: var(--font-mono); color: var(--accent); white-space: nowrap; }
+
+/* =====================================================================
+   8. CODE / TABLES / COMMON PITFALLS / SOURCES
+   ===================================================================== */
+.code { background: var(--bg-sunken); border: 1px solid var(--border);
+        border-radius: var(--radius-md); margin: 20px 0; overflow: hidden; }
+.code .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+             padding: 7px 13px; background: var(--bg-raised);
+             border-bottom: 1px solid var(--border); font-family: var(--font-mono);
+             font-size: var(--fs-xs); color: var(--text-faint); }
+.code pre { margin: 0; padding: 15px 13px; overflow-x: auto;
+            font-family: var(--font-mono); font-size: var(--fs-sm); line-height: 1.65; }
+.code pre code { background: none; border: 0; padding: 0; }
+.c-cm { color: var(--text-faint); } .c-var { color: var(--dg-data); }
+.c-str { color: var(--dg-verified); }
+
+.matrix { margin: 24px 0; }
+.matrix table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.matrix th, .matrix td { text-align: left; padding: 10px 12px;
+                         border-bottom: 1px solid var(--border); vertical-align: top; }
+.matrix th { font-size: var(--fs-xs); color: var(--text-faint); font-weight: 650;
+             background: var(--bg-raised); }
+.matrix td:first-child { font-weight: 650; }
+@media (max-width: 780px) {
+  .matrix thead, .symtab thead { position: absolute; width: 1px; height: 1px;
+                                 overflow: hidden; clip: rect(0 0 0 0); }
+  .matrix tr, .symtab tr { display: block; background: var(--bg-raised);
+               border: 1px solid var(--border); border-radius: var(--radius-md);
+               padding: 6px 13px 10px; margin-bottom: 11px; }
+  .matrix td, .symtab td { display: grid; grid-template-columns: 8em 1fr; gap: 10px;
+               padding: 8px 0; border-bottom: 1px dashed var(--border); }
+  .matrix tr td:last-child, .symtab tr td:last-child { border-bottom: 0; }
+  .matrix td::before, .symtab td::before { content: attr(data-label);
+               font-size: var(--fs-xs); color: var(--text-faint); }
+  .matrix td:first-child, .symtab td:first-child { grid-template-columns: 1fr;
+               font-size: var(--fs-base); }
+  .matrix td:first-child::before, .symtab td:first-child::before { display: none; }
+}
+
+.pit { border: 1px solid var(--border); border-radius: var(--radius-md);
+       background: var(--bg-raised); padding: 15px 17px; margin-bottom: 13px;
+       max-width: var(--measure); }
+.pit h4 { margin: 0 0 7px; font-size: var(--fs-sm); color: var(--dg-fail); }
+.pit p { font-size: var(--fs-sm); margin: 0 0 7px; color: var(--text-muted); }
+.pit p:last-child { margin: 0; }
+.pit .fix { color: var(--dg-verified); }
+
+/* Inline source marker: attach "which md this sentence came from" directly after the sentence */
+sup.cite { font-size: .68em; line-height: 0; vertical-align: super; margin-left: 1px; }
+sup.cite a { display: inline-block; min-width: 1.35em; padding: 0 .28em; text-align: center;
+             text-decoration: none; font-weight: 700; background: var(--accent-soft);
+             color: var(--accent); border-radius: 4px; }
+sup.cite a:hover { background: var(--accent); color: var(--bg); }
+
+.sources { margin-top: 60px; padding-top: 22px; border-top: 2px solid var(--border-strong); }
+.srclist li:target { background: var(--accent-soft); border-radius: var(--radius-sm); }
+.srclist { list-style: none; padding: 0; margin: 14px 0 0; }
+.srclist li { display: grid; grid-template-columns: minmax(0,1fr); gap: 2px;
+              padding: 11px 0; border-bottom: 1px solid var(--border);
+              max-width: none; margin: 0; }
+.srclist a { font-family: var(--font-mono); font-size: var(--fs-sm); word-break: break-all; }
+.srclist .srcnote { font-size: var(--fs-xs); color: var(--text-faint); }
+/* The main source must be identifiable at a glance: it determines this page's heading structure, everything else is supporting evidence used during transcription. */
+.srclist li[data-role="main"] { border-left: 3px solid var(--accent); padding-left: 10px; }
+.srclist .srcbadge { justify-self: start; font-size: var(--fs-xs); letter-spacing: .04em;
+                     padding: 1px 7px; border-radius: 999px; margin-bottom: 3px;
+                     border: 1px solid var(--border-strong); color: var(--text-muted); }
+.srclist li[data-role="main"] .srcbadge { border-color: var(--accent);
+                     background: var(--accent-soft); color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .tipcard { transition: none; } }
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="crumb"><<<Group / topic, matching the group in www.conf>>></div>
+  <div class="spacer"></div>
+  <button class="theme-btn" id="themeBtn" type="button">☾ Dark</button>
+</header>
+
+<div class="shell">
+<main>
+
+  <h1><<<Page title>>></h1>
+
+  <div class="meta">
+    <span>Updated <<<YYYY-MM-DD>>></span>
+    <span><<<About N minutes>>></span>
+    <span>Verified on: <<<Hardware · Version>>></span>
+  </div>
+
+  <p class="lede"><<<Two or three sentences making clear what problem this page solves>>></p>
+
+  <div class="callout scope">
+    <div class="title">Scope of this page</div>
+    <div class="scope-grid">
+      <div><h5>Covers</h5><ul><li><<<...>>></li></ul></div>
+      <div><h5>Does not cover</h5><ul><li><<<At least three items, and be specific>>></li></ul></div>
+    </div>
+  </div>
+
+  <!-- <<<Body sections. Every h2 must have an id, kept in sync with the .toc below>>> -->
+
+  <!-- =================================================================
+       Sources for this page — required section, must not be omitted
+       Paths are relative to this html file's location. For example, if
+       this file is at www/pages/<section>/x.html and needs to link to
+       notes/foo/bar.md, the path is ../../../notes/foo/bar.md
+       validate_page.py actually checks the filesystem to confirm every
+       one resolves.
+       ================================================================= -->
+  <section class="sources" id="sources">
+    <h2>Sources for this page</h2>
+    <p>This page's heading structure is inherited from the "primary source" note;
+       reference material is used only for verification, filling in terminology,
+       and pulling values. The content has been reorganized and visualized, not
+       copied verbatim.</p>
+    <ul class="srclist">
+      <li id="src-1" data-role="main">
+        <span class="srcbadge">Primary source</span>
+        <a href="<<<../../../notes/xxx/yyy.md>>>" target="_blank" rel="noopener"><<<notes/xxx/yyy.md>>></a>
+        <span class="srcnote"><<<This page is the visualized version of that note>>></span>
+      </li>
+      <li id="src-2" data-role="ref">
+        <span class="srcbadge">Reference</span>
+        <a href="<<<../../../notes/xxx/zzz.md>>>" target="_blank" rel="noopener"><<<notes/xxx/zzz.md>>></a>
+        <span class="srcnote"><<<Which part of it was cited, and used under which heading of this page>>></span>
+      </li>
+    </ul>
+  </section>
+
+</main>
+
+<nav class="toc" aria-label="In-page table of contents">
+  <h4>On this page</h4>
+  <!-- <<<One entry per h2>>> -->
+  <a href="#sources">Sources for this page</a>
+</nav>
+</div>
+
+<script type="application/json" id="glossary-data">
+{
+  "_": "Only include the entries this page actually uses. The master file is at .claude/skills/notes-to-html/assets/glossary.json — just copy from there; do not write definitions separately here."
+}
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement, body = document.body;
+  var embedded = window.self !== window.top;
+  if (embedded) body.setAttribute('data-embedded', '1');
+
+  /* ---- Theme ------------------------------------------------------
+     Standalone: follows the system, user can override with the button
+     in the top-right corner.
+     Inside an iframe: controlled centrally by the shell via postMessage,
+     the page's own button is hidden.
+     Message format the shell should send: { type: 'nt-theme', theme: 'dark' | 'light' }
+     This page sends back { type: 'nt-ready' } once loaded; the shell can
+     then push the current theme.
+  ------------------------------------------------------------------ */
+  function applyTheme(t) {
+    if (t === 'dark' || t === 'light') root.setAttribute('data-theme', t);
+    else root.removeAttribute('data-theme');
+    var b = document.getElementById('themeBtn');
+    if (b) b.textContent = root.getAttribute('data-theme') === 'light' ? '☀ Light' : '☾ Dark';
+  }
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'nt-theme') applyTheme(e.data.theme);
+  });
+  var btn = document.getElementById('themeBtn');
+  if (btn) btn.addEventListener('click', function () {
+    applyTheme(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+  });
+  if (!embedded) {
+    applyTheme(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  } else {
+    try { window.top.postMessage({ type: 'nt-ready' }, '*'); } catch (err) {}
+  }
+
+  /* ---- When inside an iframe, external links always open in a new tab, to avoid navigating the iframe away ---- */
+  if (embedded) {
+    Array.prototype.forEach.call(document.querySelectorAll('a[href]'), function (a) {
+      var h = a.getAttribute('href');
+      if (h && h.charAt(0) !== '#') {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener');
+      }
+    });
+  }
+
+  /* ---- Term card ---------------------------------------------------- */
+  var GLOSSARY = {};
+  try { GLOSSARY = JSON.parse(document.getElementById('glossary-data').textContent); }
+  catch (e) {}
+
+  var card = document.createElement('div');
+  card.className = 'tipcard'; card.id = 'tipcard';
+  card.setAttribute('role', 'dialog');
+  card.innerHTML = '<button class="close" type="button" aria-label="Close">×</button><div class="tb"></div>';
+  document.body.appendChild(card);
+  var tb = card.querySelector('.tb'), anchor = null, timer = null;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function html(key) {
+    var g = GLOSSARY[key];
+    if (!g) return '<p>Term definition not found: <code>' + esc(key) + '</code></p>';
+    var h = '<h6>' + esc(g.term) + '</h6>';
+    if (g.full) h += '<p class="full">' + esc(g.full) + '</p>';
+    h += '<p>' + esc(g.def) + '</p>';
+    if (g.why) h += '<p class="why">Why it matters: ' + esc(g.why) + '</p>';
+    if (g.source) h += '<p class="src">Source: ' + esc(g.source) + '</p>';
+    return h;
+  }
+  function place(t) {
+    if (window.matchMedia('(max-width: 560px)').matches) return;
+    var r = t.getBoundingClientRect(), cw = card.offsetWidth, ch = card.offsetHeight, p = 10;
+    var l = Math.max(p, Math.min(r.left + r.width / 2 - cw / 2, window.innerWidth - cw - p));
+    var tp = r.bottom + 8;
+    if (tp + ch > window.innerHeight - p) tp = Math.max(p, r.top - ch - 8);
+    card.style.left = l + 'px'; card.style.top = tp + 'px';
+  }
+  function open(t) {
+    tb.innerHTML = html(t.getAttribute('data-term'));
+    card.setAttribute('data-open', 'true');
+    if (anchor && anchor !== t) anchor.setAttribute('aria-expanded', 'false');
+    anchor = t; t.setAttribute('aria-expanded', 'true'); place(t);
+  }
+  function close() {
+    card.removeAttribute('data-open');
+    if (anchor) anchor.setAttribute('aria-expanded', 'false');
+    anchor = null;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.term'), function (el) {
+    el.setAttribute('aria-expanded', 'false');
+    el.setAttribute('aria-controls', 'tipcard');
+    el.addEventListener('mouseenter', function () {
+      if (window.matchMedia('(hover: none)').matches) return;
+      clearTimeout(timer); timer = setTimeout(function () { open(el); }, 120);
+    });
+    el.addEventListener('mouseleave', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () { if (!card.matches(':hover')) close(); }, 220);
+    });
+    el.addEventListener('focus', function () { open(el); });
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (anchor === el && card.getAttribute('data-open')) close(); else open(el);
+    });
+  });
+  card.addEventListener('mouseleave', function () {
+    if (!window.matchMedia('(hover: none)').matches) close();
+  });
+  card.querySelector('.close').addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && card.getAttribute('data-open')) { var a = anchor; close(); if (a) a.focus(); }
+  });
+  document.addEventListener('click', function (e) {
+    if (!card.getAttribute('data-open')) return;
+    if (card.contains(e.target) || (e.target.closest && e.target.closest('.term'))) return;
+    close();
+  });
+  window.addEventListener('resize', function () { if (anchor) place(anchor); });
+  window.addEventListener('scroll', function () { if (anchor) place(anchor); }, { passive: true });
+
+  /* ---- In-page TOC highlighting ---------------------------------------------- */
+  var links = [].slice.call(document.querySelectorAll('.toc a'));
+  if (links.length && 'IntersectionObserver' in window) {
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        var a = map[en.target.id];
+        if (a && en.isIntersecting) {
+          links.forEach(function (x) { x.removeAttribute('aria-current'); });
+          a.setAttribute('aria-current', 'true');
+        }
+      });
+    }, { rootMargin: '-72px 0px -70% 0px' });
+    document.querySelectorAll('main h2[id], section[id]').forEach(function (h) { obs.observe(h); });
+  }
+})();
+</script>
+</body>
+</html>
